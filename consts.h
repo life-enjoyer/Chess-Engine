@@ -1,0 +1,7 @@
+#ifndef AI_CONSTS_H
+#define AI_CONSTS_H
+
+#define BOARD_SIZE 8
+#define BOARD_MEMORY_SIZE ((BOARD_SIZE*BOARD_SIZE)/2)
+
+#endif //AI_CONSTS_H
