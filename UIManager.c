@@ -50,13 +50,13 @@ void getPieceName(char* binary, char* name) {
     }
 }
 
-void writeSelectionCharacter(unsigned char* possibleMoves, unsigned char possibleMovesLenght, unsigned char* selectedPiece, unsigned char position) {
+void writeSelectionCharacter(unsigned int* possibleMoves, unsigned int possibleMovesLenght, unsigned char* selectedPiece, unsigned int position) {
     if (position == *selectedPiece) {
         write(1, ">", 1);
         return;
     }
 
-    for (unsigned char c = 0; c < possibleMovesLenght; c++) {
+    for (unsigned int c = 0; c < possibleMovesLenght; c++) {
         if (possibleMoves[c] == position) {
             write(1, "x", 1);
             return;
@@ -89,9 +89,9 @@ void printBoard(MovesList *moves, unsigned char* selectedPiece) {
             write(1, "\n", 1);
         }
     } else {
-        char boardPossibleMoves[moves->size];
+        unsigned int boardPossibleMoves[moves->size];
         
-        unsigned char c;
+        unsigned int c;
         for (c = 0; c < moves->size; c++) {
             boardPossibleMoves[c] = moves->moves[c];
         }

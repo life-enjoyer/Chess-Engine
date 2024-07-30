@@ -11,7 +11,7 @@
 #define QUEEN 0x0E //1110
 
 void getPieceName(char* binary, char* name);
-void writeSelectionCharacter(unsigned char* possibleMoves, unsigned char possibleMovesLenght, unsigned char* selectedPiece, unsigned char position); 
+void writeSelectionCharacter(unsigned int* possibleMoves, unsigned int possibleMovesLenght, unsigned char* selectedPiece, unsigned int position);
 void printBoard(MovesList *moves, unsigned char* selectedPiece);
 void printBinary(char byte);
 

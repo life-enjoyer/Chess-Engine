@@ -8,10 +8,11 @@ typedef struct Piece {
 
 typedef struct BoardState {
 	Piece* pieces;
-	Move lastMove;
-	char checked;
 	unsigned int piecesSize;
+	char checked;
 	char gameState; // The state of the board, are the whites checkmate -> , the blacks -> , is it a stalemate -> , is it insufficient material -> , or nothing ->
+	KingRelatedSquares *whiteKingsRelatedSquares;
+	KingRelatedSquares *blackKingRelatedSquares;
 } BoardState;
 
 typedef struct NNInputs {
@@ -49,10 +50,11 @@ typedef struct StatesRequest {
 void importBoard(char new_board[BOARD_SIZE*BOARD_SIZE]);
 void createBoardFromState(BoardState state, char flipColors);
 BoardState convertBoardToState();
-Move* getAllPossibleMoves(char turnOf, unsigned int* possibleMovesSize);
+Move* getAllPossibleMoves(char turnOf, unsigned int* possibleMovesSize, char checked, KingRelatedSquares whiteKingRelatedSquares);
 BoardState* get_all_possible_next_board_states(StatesRequest request);
 void printAllPossibleBoards(char turnOf);
 void printAllPossibleBoardStates(int turnOf);
 void print_pieces_array(Piece* pieces, unsigned int size);
 void print_board_state(BoardState state);
 BoardState get_start_board();
+void set_game_state(BoardState previousState, BoardState nextState, Move lastMove, char turnOf);

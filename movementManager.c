@@ -10,7 +10,6 @@
 #define BLACKS_FORWARD (2 * 4)
 
 extern char board[BOARD_MEMORY_SIZE];
-extern char checked;
 extern char lastPushedPawn;
 extern char hasKingMoved[2];
 extern char hasRookMoved[4];
@@ -122,6 +121,22 @@ char isSquareVulnerable(unsigned int position, char color)
         return 1;
 
     return 0;
+}
+
+KingRelatedSquares* getKingRelatedSquares(char color) {
+	KingRelatedSquares *kingRelatedSquares = malloc(sizeof(KingRelatedSquares));
+	*kingRelatedSquares = (KingRelatedSquares){0, {0, 0, 0, 0, 0, 0, 0, 0}};
+
+	for (unsigned int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++) {
+		if (getPieceAt(i) == (KING | color)) {
+			kingRelatedSquares->kingPosition = i;
+			break;
+		}
+	}
+
+	setKingPosition(kingRelatedSquares, kingRelatedSquares->kingPosition);
+
+	return kingRelatedSquares;
 }
 
 void setKingPosition(KingRelatedSquares *kingRelatedSquares, unsigned int position)
@@ -313,7 +328,7 @@ char isSquareRelatedToKing(KingRelatedSquares *kingRelatedSquares, unsigned int 
     return 0;
 }
 
-void tryToAddPosition(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char pieceAtDestination, char *checkVulnerability)
+void tryToAddPosition(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char pieceAtDestination, char *checkVulnerability, char checked)
 {
     if (checked && !isSquareRelatedToKing(kingRelatedSquares, destination, 0))
         return;
@@ -343,7 +358,6 @@ void tryToAddPosition(KingRelatedSquares *kingRelatedSquares, MovesList *moves, 
         return;
     }
 
-	printf("%d\n", moves->size);
 	moves->moves[moves->size] = destination;
     moves->size++;
 }
@@ -368,26 +382,26 @@ char isASide(unsigned int position, char side)
 	;
 }
 
-void tryToAddPositionIfEmpty(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char sideToCheck, char *checkVulnerability)
+void tryToAddPositionIfEmpty(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char sideToCheck, char *checkVulnerability, char checked)
 {
     char pieceAtDestination = getPieceAt(destination);
 
     if (!(isASide(origin, sideToCheck)) && (pieceAtDestination == EMPTY))
-        tryToAddPosition(kingRelatedSquares, moves, origininIsRelatedToKing, origin, destination, pieceAtOrigin, pieceAtDestination, checkVulnerability);
+        tryToAddPosition(kingRelatedSquares, moves, origininIsRelatedToKing, origin, destination, pieceAtOrigin, pieceAtDestination, checkVulnerability, checked);
 }
 
-void tryToAddPositionIfEnemy(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char sideToCheck, char *checkVulnerability)
+void tryToAddPositionIfEnemy(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char sideToCheck, char *checkVulnerability, char checked)
 {
     char pieceAtDestination = getPieceAt(destination);
     if (!(isASide(origin, sideToCheck)) && (pieceAtDestination != EMPTY && ((pieceAtDestination & 0x01) == ((pieceAtOrigin ^ 0x01) & 0x01))))
-        tryToAddPosition(kingRelatedSquares, moves, origininIsRelatedToKing, origin, destination, pieceAtOrigin, pieceAtDestination, checkVulnerability);
+        tryToAddPosition(kingRelatedSquares, moves, origininIsRelatedToKing, origin, destination, pieceAtOrigin, pieceAtDestination, checkVulnerability, checked);
 }
 
-void tryToAddPositionIfEnemyOrEmpty(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char sideToCheck, char *checkVulnerability)
+void tryToAddPositionIfEnemyOrEmpty(KingRelatedSquares *kingRelatedSquares, MovesList *moves, char origininIsRelatedToKing, unsigned int origin, unsigned int destination, char pieceAtOrigin, char sideToCheck, char *checkVulnerability, char checked)
 {
     char pieceAtDestination = getPieceAt(destination);
     if ((!(sideToCheck != -1 && isASide(origin, sideToCheck))) && (pieceAtDestination == EMPTY || ((pieceAtDestination & 0x01) == ((pieceAtOrigin ^ 0x01) & 0x01))))
-        tryToAddPosition(kingRelatedSquares, moves, origininIsRelatedToKing, origin, destination, pieceAtOrigin, pieceAtDestination, checkVulnerability);
+        tryToAddPosition(kingRelatedSquares, moves, origininIsRelatedToKing, origin, destination, pieceAtOrigin, pieceAtDestination, checkVulnerability, checked);
 }
 
 char canCastle(char *piece, unsigned int *position, char side)
@@ -420,7 +434,7 @@ char canCastle(char *piece, unsigned int *position, char side)
     return 1;
 }
 
-MovesList getPieceMovement(KingRelatedSquares *kingRelatedSquares, char piece, unsigned int position, char checkVulnerability)
+MovesList getPieceMovement(KingRelatedSquares *kingRelatedSquares, char piece, unsigned int position, char checkVulnerability, char checked)
 {
     char isKingConcerned = isSquareRelatedToKing(kingRelatedSquares, position, 0);
 
@@ -437,24 +451,24 @@ MovesList getPieceMovement(KingRelatedSquares *kingRelatedSquares, char piece, u
             unsigned int firstSquareForward = position + forward;
             //printf("2\n");
 
-            tryToAddPositionIfEmpty(kingRelatedSquares, &moveList, isKingConcerned, position, firstSquareForward, piece, ((piece & 0x01) | 0b10), &checkVulnerability);
+            tryToAddPositionIfEmpty(kingRelatedSquares, &moveList, isKingConcerned, position, firstSquareForward, piece, ((piece & 0x01) | 0b10), &checkVulnerability, checked);
             //printf("3\n");
-            tryToAddPositionIfEnemy(kingRelatedSquares, &moveList, isKingConcerned, position, firstSquareForward - 1, piece, 0b00, &checkVulnerability);
+            tryToAddPositionIfEnemy(kingRelatedSquares, &moveList, isKingConcerned, position, firstSquareForward - 1, piece, 0b00, &checkVulnerability, checked);
             //printf("4\n");
-            tryToAddPositionIfEnemy(kingRelatedSquares, &moveList, isKingConcerned, position, firstSquareForward + 1, piece, 0b01, &checkVulnerability);
+            tryToAddPositionIfEnemy(kingRelatedSquares, &moveList, isKingConcerned, position, firstSquareForward + 1, piece, 0b01, &checkVulnerability, checked);
             //printf("5\n");
 
             if ((((position & 0b111000) >> 3) == (3 + ((piece & 0x01)))) && (lastPushedPawn != -1) && ((lastPushedPawn - 1) == (position & 0b111) || (lastPushedPawn + 1) == (position & 0b111)))
-                tryToAddPosition(kingRelatedSquares, &moveList, isKingConcerned, position, ((2 + (((piece & 0x01) * 3))) << 3) | lastPushedPawn, piece, EMPTY, &checkVulnerability);
+                tryToAddPosition(kingRelatedSquares, &moveList, isKingConcerned, position, ((2 + (((piece & 0x01) * 3))) << 3) | lastPushedPawn, piece, EMPTY, &checkVulnerability, checked);
 
             if (((position & 0b00111000) >> 3) == 1 + ((piece & 0x01) ^ 0x01) * 5)
-                tryToAddPositionIfEmpty(kingRelatedSquares, &moveList, isKingConcerned, position, position + (forward * 2), piece, ((piece & 0x01) | 0b10), &checkVulnerability);
+                tryToAddPositionIfEmpty(kingRelatedSquares, &moveList, isKingConcerned, position, position + (forward * 2), piece, ((piece & 0x01) | 0b10), &checkVulnerability, checked);
 
             //printf("5\n");
             return moveList;
         }
 
-        unsigned char maxMovesLength = 0;
+        unsigned int maxMovesLength = 0;
 
         // has bishop bit
         if ((piece & 0b10) == 0b10)
@@ -473,7 +487,7 @@ MovesList getPieceMovement(KingRelatedSquares *kingRelatedSquares, char piece, u
                     char returnCode = checkSlidingPieceMovement((diagonal | 0b100), (piece & 0x01), &checkedPosition);
 
                     if (returnCode ^ 0b11)
-                        tryToAddPosition(kingRelatedSquares, &moveList, isKingConcerned, position, checkedPosition, piece, getPieceAt(checkedPosition), &checkVulnerability);
+                        tryToAddPosition(kingRelatedSquares, &moveList, isKingConcerned, position, checkedPosition, piece, getPieceAt(checkedPosition), &checkVulnerability, checked);
 
                     if (returnCode & 0b10)
                         break;
@@ -504,7 +518,7 @@ MovesList getPieceMovement(KingRelatedSquares *kingRelatedSquares, char piece, u
                     char returnCode = checkSlidingPieceMovement(direction, (char)(piece & 0x01), &checkedPosition);
 
                     if (returnCode ^ 0b11)
-                        tryToAddPosition(kingRelatedSquares, &moveList, isKingConcerned, position, checkedPosition, piece, getPieceAt(checkedPosition), &checkVulnerability);
+                        tryToAddPosition(kingRelatedSquares, &moveList, isKingConcerned, position, checkedPosition, piece, getPieceAt(checkedPosition), &checkVulnerability, checked);
 
                     if (returnCode & 0b10)
                         break;
@@ -528,7 +542,7 @@ MovesList getPieceMovement(KingRelatedSquares *kingRelatedSquares, char piece, u
 
                     if (knightWentThroughtTheBoard(&position, &possibleJump))
                         continue;
-                    tryToAddPositionIfEnemyOrEmpty(kingRelatedSquares, &moveList, isKingConcerned, position, possibleJump, piece, -1, &checkVulnerability);
+                    tryToAddPositionIfEnemyOrEmpty(kingRelatedSquares, &moveList, isKingConcerned, position, possibleJump, piece, -1, &checkVulnerability, checked);
                 }
             }
 

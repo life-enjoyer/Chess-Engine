@@ -7,13 +7,11 @@
 #include <math.h>
 
 extern char board[BOARD_MEMORY_SIZE];
-extern KingRelatedSquares kingsRelatedSquares[2];
 
 void createBoardFromState(BoardState state, char flipColors)  {
 	for (unsigned int i = 0; i < (unsigned int)((BOARD_SIZE*BOARD_SIZE)/2); i++) {
 		board[i] = ((EMPTY << 4) & 0xF0) | (EMPTY & 0x0F);
 	}
-	printf("%i\n", state.piecesSize);
 	for (int i = 0; i < state.piecesSize; i++) {
 		if (flipColors) {
 			setPiece((char)((state.pieces[i].piece & 0b11111110) | ((state.pieces[i].piece ^ 0x01) & 0x01)), state.pieces[i].coordinates.y * BOARD_SIZE + state.pieces[i].coordinates.x);
@@ -24,7 +22,10 @@ void createBoardFromState(BoardState state, char flipColors)  {
 }
 
 BoardState convertBoardToState() {
-	BoardState state = {NULL, 0};
+	KingRelatedSquares* whitesKingRelatedSquares = getKingRelatedSquares(0);
+	KingRelatedSquares* blacksKingRelatedSquares = getKingRelatedSquares(1);
+
+	BoardState state = {NULL, 0, 0, 0, whitesKingRelatedSquares, blacksKingRelatedSquares};
 	state.pieces = malloc(sizeof(Piece)*2);
 	if (state.pieces == NULL) {
 		printf("Memory Allocation failed");
@@ -51,16 +52,19 @@ BoardState convertBoardToState() {
 		state.pieces[state.piecesSize-1] = piece;
 	}
 
+	state.checked = 0;
+	state.gameState = 0;
+
 	return state;
 }
 
 void importBoard(char new_board[BOARD_SIZE*BOARD_SIZE]) {
 	for (int i = 0; i < BOARD_SIZE*BOARD_SIZE; i++) {
-		setPiece(new_board[i], i);
+		setPiece(getPieceAt(i), i);
 	}
 }
 
-Move* getAllPossibleMoves(char turnOf, unsigned int* possibleMovesSize) {
+Move* getAllPossibleMoves(char turnOf, unsigned int* possibleMovesSize, char checked, KingRelatedSquares whiteKingRelatedSquares) {
 	*possibleMovesSize = 0;
 	Move* possibleMoves = (Move*) calloc(1, sizeof(Move));
 	if (possibleMoves == NULL) {
@@ -77,14 +81,13 @@ Move* getAllPossibleMoves(char turnOf, unsigned int* possibleMovesSize) {
 		if ((piece & 0x01) != (turnOf & 0x01))
 			continue;
 
-		MovesList movesList = getPieceMovement(&kingsRelatedSquares[turnOf & 0x01], piece, i, 1);
+		MovesList movesList = getPieceMovement(&whiteKingRelatedSquares, piece, i, 1, checked);
 
 		if (movesList.size == 0) {
 			free(movesList.moves);
 			continue;
 		}
 
-		printf("e: %d\n", movesList.size);
 		*possibleMovesSize += movesList.size;
 		possibleMoves = (Move*) realloc(possibleMoves, *possibleMovesSize * sizeof(Move));
 
@@ -102,11 +105,8 @@ Move* getAllPossibleMoves(char turnOf, unsigned int* possibleMovesSize) {
 }
 
 BoardState* get_all_possible_next_board_states(StatesRequest request) {
-	printf("turnOf: %d\n", request.turnOf);
-
 	createBoardFromState(request.currentBoardState, request.turnOf == 1 ? 1 : 0);
-	unsigned int possibleMovesSize;
-	Move* possibleMoves = getAllPossibleMoves(0, request.boardStateSize);
+	Move* possibleMoves = getAllPossibleMoves(0, request.boardStateSize, request.currentBoardState.checked, *request.currentBoardState.whiteKingsRelatedSquares);
 
 	BoardState* possibleBoardStates = malloc(sizeof(BoardState) * (*request.boardStateSize));
 
@@ -117,6 +117,7 @@ BoardState* get_all_possible_next_board_states(StatesRequest request) {
 		setPiece(movedPiece, possibleMoves[i].destination);
 
 		possibleBoardStates[i] = convertBoardToState();
+		set_game_state(request.currentBoardState, possibleBoardStates[i], possibleMoves[i], 0);
 
 		setPiece(movedPiece, possibleMoves[i].origin);
 		setPiece(removedPiece, possibleMoves[i].destination);
@@ -129,6 +130,8 @@ BoardState* get_all_possible_next_board_states(StatesRequest request) {
 void freeBoardStates(BoardState* boardStates, unsigned int boardStatesSize) {
 	for (unsigned int i = 0; i < boardStatesSize; i++) {
 		free(boardStates[i].pieces);
+		free(boardStates[i].whiteKingsRelatedSquares);
+		free(boardStates[i].blackKingRelatedSquares);
  	}
 	free(boardStates);
 }
@@ -139,8 +142,10 @@ void printAllPossibleBoards(char turnOf) {
 	setupBaseValues();
 	setupBasePosition();
 
-	Move* moveList = getAllPossibleMoves(turnOf, &size);
-	printf("%d", size);
+	KingRelatedSquares* kingRelatedSquares = getKingRelatedSquares(0);
+	Move* moveList = getAllPossibleMoves(turnOf, &size, 0, *kingRelatedSquares);
+	free(kingRelatedSquares);
+
 
 	for (unsigned int i = 0; i < size; i++) {
 		Move move = moveList[i];
@@ -204,34 +209,35 @@ BoardState get_start_board() {
 	return convertBoardToState();
 }
 
-void nextTurn(BoardState previousState, BoardState nextState, char turnOf)
+void set_game_state(BoardState previousState, BoardState nextState, Move lastMove, char turnOf)
 {
-	char selectedPiece = getPieceAt(nextState.lastMove.origin);
+	char selectedPiece = getPieceAt(lastMove.origin);
 	createBoardFromState(previousState, turnOf);
 
-	char enPassant = handleEnPassant(&selectedPiece, &nextState.lastMove.destination);
-	handleTurnCountReset(&selectedPiece, &nextState.lastMove.origin, &nextState.lastMove.destination);
-	handleTakingPiece(&nextState.lastMove.destination, &enPassant);
+	char enPassant = handleEnPassant(&selectedPiece, &lastMove.destination);
+	handleTurnCountReset(&selectedPiece, &lastMove.origin, &lastMove.destination);
+	handleTakingPiece(&lastMove.destination, &enPassant);
 
-	setPiece(EMPTY, nextState.lastMove.origin);
-	setPiece(selectedPiece, nextState.lastMove.destination);
+	setPiece(EMPTY, lastMove.origin);
+	setPiece(selectedPiece, lastMove.destination);
 
-	char castle = handleKingMovement(&selectedPiece, &nextState.lastMove.origin, &nextState.lastMove.destination);
+
+	char castle = handleKingMovement(&selectedPiece, &lastMove.origin, &lastMove.destination, *previousState.whiteKingsRelatedSquares);
 	if (!castle)
 	{
-		handleRookMovement(&nextState.lastMove.origin, &nextState.lastMove.destination);
-		handlePushedPawn(&selectedPiece, &nextState.lastMove.origin, &nextState.lastMove.destination);
+		handleRookMovement(&lastMove.origin, &lastMove.destination);
+		handlePushedPawn(&selectedPiece, &lastMove.origin, &lastMove.destination);
 	}
 
-	handlePromotion(&selectedPiece, &nextState.lastMove.destination);
+	handlePromotion(&selectedPiece, &lastMove.destination);
 
 
 	// this optimization works most of the time but under certain circumstances it can cause a bug (still don't know why)
 	// if (handleMovementRelationWithOpposingKing(&move.origin, &move.destination, &enPassant))
 	//{
-	char handledCheck = handleChecks(0);
+	char handledCheck = handleChecks(*previousState.blackKingRelatedSquares, 0);
 	if (handledCheck == 2) {
-		nextState.gameState = (turnOf ^ 0b01) + 1;
+		nextState.gameState = (char)((turnOf ^ 0b01) + 1);
 		return;
 	}
 	if (handledCheck == 1) {
@@ -241,5 +247,5 @@ void nextTurn(BoardState previousState, BoardState nextState, char turnOf)
 	//}
 
 	nextState.checked = 0;
-	nextState.gameState = handleDraw(0);
+	nextState.gameState = handleDraw(*previousState.blackKingRelatedSquares,0);
 }

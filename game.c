@@ -7,23 +7,17 @@
 
 char board[BOARD_MEMORY_SIZE] = {0};
 char turnOf = 0;
-char checked = 0;
 char lastPushedPawn = -1;
 char hasKingMoved[2] = {0};
 char hasRookMoved[4] = {0}; // 1 left white, 2 right white, 3 left black, 4 right black
 char turnCount = 0;
 char pieceCount[2] = {27, 27}; // every piece have a value of 2 but the knight and the bishop which have a value of 1 and the king which has no value, when a piece is captured the value of its corresponding piece count is decreased. When the piece count of both side is inferior to 2 it's a draw
-long int moveCount = 0;
-
-KingRelatedSquares kingsRelatedSquares[2]; // 0 for the whites and 1 for the blacks as usual
 
 void setupBaseValues()
 {
     turnOf = 0;
-    checked = 0;
     lastPushedPawn = -1;
     turnCount = 0;
-    moveCount = 0;
 
     for (char i = 0; i < 2; i++)
     {
@@ -67,11 +61,9 @@ void setupBasePosition()
 	setPiece(BISHOP, (whiteOrigin.y+1) * BOARD_SIZE + whiteOrigin.x + 5);
 	setPiece(QUEEN, (whiteOrigin.y+1) * BOARD_SIZE + whiteOrigin.x + 3);
 	setPiece(KING, (whiteOrigin.y+1) * BOARD_SIZE + whiteOrigin.x + 4);
-
-    setKingPosition(&kingsRelatedSquares[0], (whiteOrigin.y+1) * BOARD_SIZE + whiteOrigin.x + 4);
-    setKingPosition(&kingsRelatedSquares[1], (blackOrigin.y) * BOARD_SIZE + blackOrigin.x + 4);
 }
 
+/* UNUSED FUNCTION FOR NOW
 char handleMovementRelationWithOpposingKing(char *basePos, char *finalPos, char *isEnPassant)
 {
     // return true if the movement is related to the opposing king, false otherwise
@@ -95,21 +87,21 @@ char handleMovementRelationWithOpposingKing(char *basePos, char *finalPos, char 
 
     return basePosRelation || enPassantRelation || finalPosRelation;
 }
+*/
 
-char handleChecks(char printThings)
+char handleChecks(KingRelatedSquares blackKingRelatedSquares, char printThings)
 {
     // returns true if there is a checkmate, false otherwise
 
-    if (isSquareVulnerable(kingsRelatedSquares[turnOf ^ 0b01].kingPosition, turnOf))
+    if (isSquareVulnerable(blackKingRelatedSquares.kingPosition, turnOf))
     {
-        checked = 1;
-        for (unsigned char square = 0; square < 64; square++)
+        for (unsigned int square = 0; square < BOARD_SIZE*BOARD_SIZE; square++)
         {
             char piece = getPieceAt(square);
             if (piece == EMPTY || (piece & 0x01) == turnOf)
                 continue;
 
-            MovesList moves = getPieceMovement(&kingsRelatedSquares[turnOf ^ 0b01], piece, square, 1);
+            MovesList moves = getPieceMovement(&blackKingRelatedSquares, piece, square, 1, 0);
             if (moves.size > 0)
             {
                 free(moves.moves);
@@ -121,11 +113,10 @@ char handleChecks(char printThings)
         return 2;
     }
 
-    checked = 0;
     return 0;
 }
 
-char handleDraw(char printThings)
+char handleDraw(KingRelatedSquares blackKingRelatedSquares, char printThings)
 {
     // returns true if there is a draw, false otherwise
     if (turnCount >= 50)
@@ -134,16 +125,16 @@ char handleDraw(char printThings)
     if (pieceCount[0] < 2 && pieceCount[1] < 2)
         return 5;
 
-    if (isSquareVulnerable(kingsRelatedSquares[turnOf ^ 0b01].kingPosition, turnOf))
+    if (isSquareVulnerable(blackKingRelatedSquares.kingPosition, turnOf))
         return 0;
 
-    for (unsigned char square = 0; square < 64; square++)
+    for (unsigned int square = 0; square < (BOARD_SIZE*BOARD_SIZE); square++)
     {
         char piece = getPieceAt(square);
         if (piece == EMPTY || (piece & 0x01) == turnOf)
             continue;
 
-        MovesList moves = getPieceMovement(&kingsRelatedSquares[turnOf ^ 0b01], piece, square, 1);
+        MovesList moves = getPieceMovement(&blackKingRelatedSquares, piece, square, 1, 0);
         if (moves.size > 0)
         {
             free(moves.moves);
@@ -174,7 +165,7 @@ char handleEnPassant(char *selectedPiece, unsigned int *destination)
     return 0;
 }
 
-char handleKingMovement(char *selectedPiece, unsigned int  *origin, unsigned int *destination)
+char handleKingMovement(char *selectedPiece, unsigned int  *origin, unsigned int *destination, KingRelatedSquares whiteKingRelatedSquares)
 {
     // return true if a castle occured, false otherwise
 
@@ -185,7 +176,7 @@ char handleKingMovement(char *selectedPiece, unsigned int  *origin, unsigned int
 
     if ((*selectedPiece & 0b1110) == KING)
     {
-        setKingPosition(&kingsRelatedSquares[turnOf], *destination);
+        setKingPosition(&whiteKingRelatedSquares, *destination);
 
         if (!hasKingMoved[turnOf] && (abs(*destination - *origin)) == 2)
         {

@@ -15,10 +15,23 @@ class Piece(ctypes.Structure):
     ]
 
 
+class KingRelatedSquares(ctypes.Structure):
+    __fields__ = [("kingPosition", ctypes.c_uint),
+                  ("linesRelated", ctypes.POINTER(ctypes.c_uint))]
+
+    """Each line position is an unsigned int
+    the first position is the minimal column to be concerned, the second the maximal, the third the minimal line and the forth the maximal
+    the fifth is the minimal first diagonal, the sixth the maximal, the seventh the minimal second diagonal and the eighth the maximal
+                                                                                                                           """
+
+
 class BoardState(ctypes.Structure):
     _fields_ = [("pieces", ctypes.POINTER(Piece)),
                 ("piecesSize", ctypes.c_uint),
-                ("gameState", ctypes.c_uint)]
+                ("checked", ctypes.c_byte),
+                ("gameState", ctypes.c_byte),
+                ("whiteKingsRelatedSquares", ctypes.POINTER(KingRelatedSquares)),
+                ("blackKingRelatedSquares", ctypes.POINTER(KingRelatedSquares))]
 
 
 class StatesRequest(ctypes.Structure):
