@@ -24,6 +24,12 @@ add_library(ENGINE SHARED
 
 target_link_libraries(ENGINE -lm)
 
+if (UNIX)
+    set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine.so")
+elseif (WIN32)
+    set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine.dll")
+endif (UNIX)
+
 set_target_properties(ENGINE PROPERTIES PREFIX "")
-set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine")
+set_target_properties(ENGINE PROPERTIES SUFFIX "")
 
