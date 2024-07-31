@@ -26,13 +26,11 @@ target_link_libraries(ENGINE -lm)
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-include(GenerateExportHeader)
-generate_export_header(ENGINE)
-
 if (UNIX)
     set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine.so")
 elseif (WIN32)
     set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine.dll")
+    target_link_options(bar PRIVATE "-Wl,--export-all-symbols")
 endif (UNIX)
 
 set_target_properties(ENGINE PROPERTIES PREFIX "")
