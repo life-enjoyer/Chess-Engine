@@ -30,7 +30,7 @@ if (UNIX)
     set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine.so")
 elseif (WIN32)
     set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine.dll")
-    target_link_options(bar PRIVATE "-Wl,--export-all-symbols")
+    target_link_options(ENGINE PRIVATE "-Wl,--export-all-symbols")
 endif (UNIX)
 
 set_target_properties(ENGINE PROPERTIES PREFIX "")
