@@ -1,4 +1,4 @@
 import chessGame
 
-boardStates = chessGame.get_possible_board_states()
+boardStates = chessGame.print_all_boards_from_starting_position()
 print(boardStates)

@@ -60,11 +60,30 @@ library.get_all_possible_next_board_states.argtypes = [StatesRequest]
 library.get_start_board.restype = BoardState
 
 
-def get_possible_board_states():
+def get_start_board_state():
+    return library.get_start_board()
+
+
+def get_next_board_states(current_board_state):
+    board_state_size = ctypes.c_uint(0)
+    request = StatesRequest(current_board_state, ctypes.pointer(board_state_size), 0)
+
+    next_board_states = library.get_all_possible_next_board_states(request)
+
+    next_board_states_python_array = []
+
+    for i in range(board_state_size.value):
+        next_board_states_python_array.append(next_board_states[i])
+
+    return next_board_states_python_array
+
+
+"""This is a test function that prints all the nodes from the starting position"""
+def print_all_boards_from_starting_position():
     currentBoardState = library.get_start_board()
     boardStatesSize = ctypes.c_uint(0)
 
-    request = StatesRequest(currentBoardState, ctypes.pointer(boardStatesSize),  0)
+    request = StatesRequest(currentBoardState, ctypes.pointer(boardStatesSize), 0)
 
     all_boards = library.get_all_possible_next_board_states(request)
 
@@ -74,4 +93,3 @@ def get_possible_board_states():
     print(boardStatesSize.value)
 
     return all_boards
-
