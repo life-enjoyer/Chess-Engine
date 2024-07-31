@@ -23,6 +23,7 @@ add_library(ENGINE SHARED
         main.c)
 
 target_link_libraries(ENGINE -lm)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 if (UNIX)
     set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine.so")
