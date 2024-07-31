@@ -25,5 +25,5 @@ add_library(AI SHARED
 target_link_libraries(AI m)
 
 set_target_properties(AI PROPERTIES PREFIX "")
-set_target_properties(AI PROPERTIES OUTPUT_NAME "test")
+set_target_properties(AI PROPERTIES OUTPUT_NAME "engine")
 

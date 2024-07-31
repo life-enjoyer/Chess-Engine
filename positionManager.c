@@ -1,10 +1,6 @@
 #include "positionManager.h"
 
-#include <unistd.h>
-#include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
-#include <ctype.h>
 #include "consts.h"
 
 extern char board[BOARD_MEMORY_SIZE]; 	// each square is 4 bits long, the first three represent the piece according to the constants

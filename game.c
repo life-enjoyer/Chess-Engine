@@ -1,7 +1,6 @@
 #include "game.h"
 #include "consts.h"
 
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 

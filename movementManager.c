@@ -1,7 +1,13 @@
 #include "movementManager.h"
 #include "consts.h"
 
+#ifdef _WIN32
+#include <io.h>
+#define access _access
+
+#else
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>

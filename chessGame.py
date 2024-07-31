@@ -40,7 +40,7 @@ class StatesRequest(ctypes.Structure):
                 ("turnOf", ctypes.c_int)]
 
 
-library = ctypes.CDLL('./test.so')
+library = ctypes.CDLL('./engine.so')
 
 """print_piece_array function"""
 library.print_pieces_array.argtypes = [ctypes.POINTER(Piece), ctypes.c_int]
