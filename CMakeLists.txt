@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
 
-add_library(ENGINE SHARED
+add_library(ENGINE MODULE
         game.c
         memoryUtils.c
         memoryUtils.h
