@@ -1,4 +1,5 @@
 import ctypes
+from sys import platform
 
 
 class Coordinates(ctypes.Structure):
@@ -40,7 +41,10 @@ class StatesRequest(ctypes.Structure):
                 ("turnOf", ctypes.c_int)]
 
 
-library = ctypes.CDLL('./engine.so')
+if platform == "win32":
+    library = ctypes.windll.LoadLibrary('engine.dll')
+else:
+    library = ctypes.CDLL('./engine.so')
 
 """print_piece_array function"""
 library.print_pieces_array.argtypes = [ctypes.POINTER(Piece), ctypes.c_int]
