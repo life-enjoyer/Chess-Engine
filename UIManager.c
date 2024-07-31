@@ -11,6 +11,7 @@
 #endif
 
 #include <stdio.h>
+#include <malloc.h>
 
 extern char board[BOARD_MEMORY_SIZE];
 
@@ -93,7 +94,7 @@ void printBoard(MovesList *moves, unsigned char* selectedPiece) {
             write(1, "\n", 1);
         }
     } else {
-        unsigned int boardPossibleMoves[moves->size];
+		unsigned int* boardPossibleMoves = malloc(moves->size * sizeof(unsigned int));
         
         unsigned int c;
         for (c = 0; c < moves->size; c++) {
@@ -122,6 +123,8 @@ void printBoard(MovesList *moves, unsigned char* selectedPiece) {
             }
             write(1, "\n", 1);
         }
+
+		free(boardPossibleMoves);
     }
 }
 

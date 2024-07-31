@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
 
-add_library(AI SHARED
+add_library(ENGINE SHARED
         game.c
         memoryUtils.c
         memoryUtils.h
@@ -22,8 +22,8 @@ add_library(AI SHARED
         consts.h
         main.c)
 
-target_link_libraries(AI m)
+target_link_libraries(ENGINE m)
 
-set_target_properties(AI PROPERTIES PREFIX "")
-set_target_properties(AI PROPERTIES OUTPUT_NAME "engine")
+set_target_properties(ENGINE PROPERTIES PREFIX "")
+set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine")
 
