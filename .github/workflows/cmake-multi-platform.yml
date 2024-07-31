@@ -80,7 +80,7 @@ jobs:
         name: lib-${{ matrix.os }}-${{ matrix.c_compiler }}
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/*.so
-          ${{ steps.strings.outputs.build-output-dir }}/*.dll
+          ${{ steps.strings.outputs.build-output-dir }}/Release/*.dll
         retention-days: 0
     - name: List build directory
       run: ls -R ${{ steps.strings.outputs.build-output-dir }}
