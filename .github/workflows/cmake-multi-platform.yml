@@ -81,5 +81,5 @@ jobs:
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/*.so
           ${{ steps.strings.outputs.build-output-dir }}/*.dll
-
+        retention-days: 0
 
