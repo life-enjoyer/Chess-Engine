@@ -22,7 +22,7 @@ add_library(ENGINE SHARED
         consts.h
         main.c)
 
-target_link_libraries(ENGINE m)
+target_link_libraries(ENGINE -lm)
 
 set_target_properties(ENGINE PROPERTIES PREFIX "")
 set_target_properties(ENGINE PROPERTIES OUTPUT_NAME "engine")
